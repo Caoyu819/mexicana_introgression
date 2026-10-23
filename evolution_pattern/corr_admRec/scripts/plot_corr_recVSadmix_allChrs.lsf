@@ -1,0 +1,46 @@
+#!/bin/bash
+#BSUB -J merge_plot_admix
+#BSUB -n 2
+#BSUB -R "span[hosts=1] rusage[mem=6GB]"
+#BSUB -o ${MEXICANA_INTROGRESSION_ROOT}/0_elai/log_845maize/plot_rec_adm_%J.out
+#BSUB -e ${MEXICANA_INTROGRESSION_ROOT}/0_elai/log_845maize/plot_rec_adm__%J.err
+#BSUB -q normal
+
+module load Anaconda3/4.3.1
+source ~/.bashrc
+conda activate R4.4_env
+
+# ----------------- settings -----------------
+ver="v5"
+mg="mg1000"
+sw="s10w10"
+# -----------------------------------------------------
+
+dir_elai="${MEXICANA_INTROGRESSION_ROOT}/0_elai/out_elai_845maize"
+dir_out="${dir_elai}/visualization/${sw}_${mg}_unmask/corr_RecAdmix/2_average_acrossPop"
+out_prefix="elai.allChrs.${mg}.${sw}.aveAdmAcrossPop.addRec.allChrs.${ver}"
+
+mkdir -p "$dir_out"
+
+# 1. check chr1-10 files
+input_files=()
+for chr in $(seq 1 10); do
+  f="${dir_elai}/chr${chr}/${mg}/${sw}/elai.chr${chr}.${mg}.${sw}.aveAdmAcrossPop.addRec.${ver}.txt"
+  if [[ ! -f "$f" ]]; then
+    echo "[Error] Missing file: $f" >&2
+    exit 1
+  fi
+  input_files+=("$f")
+done
+
+# 2. merge 10 chrs
+f_merged="${dir_out}/${out_prefix}.txt"
+echo "Merging 10 chromosomes into: $f_merged"
+awk 'NR==1 || FNR>1' "${input_files[@]}" > "$f_merged"
+
+# 3. plot
+echo "Generating correlation and boxplot figures..."
+Rscript ${MEXICANA_INTROGRESSION_ROOT}/0_elai/working_directory/plot_correlation_decileScatter_recVSadmix_allChrs_aveAdmPop.R \
+  "$f_merged" "$dir_out" "$out_prefix"
+
+echo "All tasks finished successfully."

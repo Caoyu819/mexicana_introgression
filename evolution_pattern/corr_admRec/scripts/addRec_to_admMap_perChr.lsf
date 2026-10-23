@@ -1,0 +1,29 @@
+#!/bin/bash
+#BSUB -J addRec[1-10]
+#BSUB -n 1
+#BSUB -R "span[hosts=1] rusage[mem=4GB]"
+#BSUB -o ${MEXICANA_INTROGRESSION_ROOT}/0_elai/log_845maize/add_rec_per_chr_%J_%I.out
+#BSUB -e ${MEXICANA_INTROGRESSION_ROOT}/0_elai/log_845maize/add_rec_per_chr_%J_%I.err
+#BSUB -q normal
+
+module load Anaconda3/4.3.1
+source ~/.bashrc
+conda activate R4.4_env
+
+# ----------------- settings  -----------------
+ver="v5"
+mg="mg1000"
+sw="s10w10"
+chr_id=${LSB_JOBINDEX}
+# -----------------------------------------------------
+
+dir_elai="${MEXICANA_INTROGRESSION_ROOT}/0_elai/out_elai_845maize"
+dir_recMap="${MEXICANA_INTROGRESSION_ROOT}/data_archive/rec_map/finemap-main/data/hapmap"
+
+# path
+f_admix="${dir_elai}/chr${chr_id}/${mg}/${sw}/elai.chr${chr_id}.${mg}.${sw}.${ver}.aveAdmAcrossPop.txt"
+f_rec="${dir_recMap}/chr${chr_id}.hapmap.tsv"
+f_out="${dir_elai}/chr${chr_id}/${mg}/${sw}/elai.chr${chr_id}.${mg}.${sw}.aveAdmAcrossPop.addRec.${ver}.txt"
+
+Rscript ${MEXICANA_INTROGRESSION_ROOT}/0_elai/working_directory/add_rec_per_chr.R \
+  "$f_admix" "$f_rec" "$f_out" "Chr${chr_id}"

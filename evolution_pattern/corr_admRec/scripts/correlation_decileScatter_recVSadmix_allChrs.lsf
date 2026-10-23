@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#BSUB -J Corr_rec_admix_[1-845]
+#BSUB -n 2
+#BSUB -R "span[hosts=1] rusage[mem=5GB]"
+#BSUB -o ${MEXICANA_INTROGRESSION_ROOT}/5_admMap_popGen/5_corr_RecAdmix/log/%J.Corr_rec_admix.%I.out
+#BSUB -e ${MEXICANA_INTROGRESSION_ROOT}/5_admMap_popGen/5_corr_RecAdmix/log/%J.Corr_rec_admix.%I.err
+#BSUB -q normal
+
+#module load R/4.2.0
+module load Anaconda3/4.3.1
+source ~/.bashrc
+conda activate R4.4_env
+
+mg="mg1000"
+sw="s10w10"
+
+# Extract the specific sample using the job array index
+list_inds="${MEXICANA_INTROGRESSION_ROOT}/0_elai/working_directory/list_845_elai_sorted"
+#sample_index=$(( (${LSB_JOBINDEX} - 1) / 845 + 1 ))
+#sample_id=$(sed -n "${sample_index}p" ${list_inds})
+ind_id=$(sed -n "${LSB_JOBINDEX}p" ${list_inds})
+
+dir_elai="${MEXICANA_INTROGRESSION_ROOT}/0_elai/out_elai_845maize"
+#dir_out="${MEXICANA_INTROGRESSION_ROOT}/0_elai/out_elai_845maize/visualization/${sw}_${mg}_unmask"
+#f_recMap="${MEXICANA_INTROGRESSION_ROOT}/1_ahmm_mls/input_ahmms/rec_map_B73V4.txt"
+dir_out="${MEXICANA_INTROGRESSION_ROOT}/5_admMap_popGen/5_corr_RecAdmix/1_perInd"
+
+# The command to get rec_map with JRI's fineMap
+#cat chr*.hapmap.v4.tsv|awk '{print $1"_"$2"\t"$1"_"$2"\t"$4"\t"$1"\t"$2}'|sed 's/chr//g'|sort -k4,4n -k5,5n|grep -v "Chromosome_Position"|grep -v "B73V4_ctg" > rec_map_B73V4_fineMapByJRI.txt
+f_recMap="${MEXICANA_INTROGRESSION_ROOT}/data_archive/rec_map/finemap-main/data/hapmap/rec_map_B73V4_fineMapByJRI.txt"
+
+f_chrLen="${MEXICANA_INTROGRESSION_ROOT}/0_list_map/B73_v4.genome.index"
+
+#echo $sample_id $chrid $par_comb_ELAI
+Rscript ${MEXICANA_INTROGRESSION_ROOT}/5_admMap_popGen/5_corr_RecAdmix/working_directory/correlation_decileScatter_recVSadmix_allChrs.R \
+  $dir_elai $f_recMap $f_chrLen $dir_out $ind_id $mg $sw
